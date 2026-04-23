@@ -18,10 +18,10 @@ if errorlevel 1 (
 
 echo.
 echo Fertig!
-echo Die EXE liegt in: ..\releases\MultiViewer-win32-x64\MultiViewer.exe
+echo Die EXE liegt in: ..\builds\MultiViewer-win32-x64\MultiViewer.exe
 echo.
-echo Tipp: Den ganzen Ordner ..\releases\MultiViewer-win32-x64\ weitergeben
-echo       oder als ZIP packen. Die EXE benoetigt den Ordner.
+echo Tipp: Den ganzen Ordner ..\builds\MultiViewer-win32-x64\ als ZIP packen
+echo       und in releases\ ablegen.
 echo.
-start explorer ..\releases\MultiViewer-win32-x64
+start explorer ..\builds\MultiViewer-win32-x64
 pause

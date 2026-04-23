@@ -46,9 +46,9 @@ npm start
 app\build.bat
 ```
 
-Output: `releases\MultiViewer-win32-x64\MultiViewer.exe`
+Output: `builds\MultiViewer-win32-x64\MultiViewer.exe`
 
-Distribute the whole `MultiViewer-win32-x64` folder (or zip it) — the EXE needs the surrounding files.
+Zip the `MultiViewer-win32-x64` folder and place it in `releases\` for distribution — the EXE needs the surrounding files.
 
 ---
 
@@ -87,5 +87,6 @@ MultiViewer/
 │   ├── package.json
 │   ├── run.bat          # One-click launch
 │   └── build.bat        # One-click EXE build
-└── releases/            # Finished builds go here
+├── builds/              # Build output (git-ignored)
+└── releases/            # Finished ZIPs for distribution
 ```
