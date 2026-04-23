@@ -1,0 +1,14 @@
+{
+  "name": "multiviewer",
+  "version": "1.0.0",
+  "description": "9-panel browser grid",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . MultiViewer --platform=win32 --arch=x64 --out=dist --overwrite --asar --ignore=\"(dist|node_modules|build\\.bat|run\\.bat|requirements\\.txt|main\\.py)$\""
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-packager": "^17.1.2"
+  }
+}
