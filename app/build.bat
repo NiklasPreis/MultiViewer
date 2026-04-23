@@ -1,5 +1,5 @@
 @echo off
-title MultiViewer – Build
+title MultiViewer ï¿½ Build
 
 echo Installiere Build-Abhaengigkeiten...
 call npm install --loglevel=error
@@ -18,10 +18,10 @@ if errorlevel 1 (
 
 echo.
 echo Fertig!
-echo Die EXE liegt in: dist\MultiViewer-win32-x64\MultiViewer.exe
+echo Die EXE liegt in: ..\releases\MultiViewer-win32-x64\MultiViewer.exe
 echo.
-echo Tipp: Den ganzen Ordner dist\MultiViewer-win32-x64\ weitergeben
+echo Tipp: Den ganzen Ordner ..\releases\MultiViewer-win32-x64\ weitergeben
 echo       oder als ZIP packen. Die EXE benoetigt den Ordner.
 echo.
-start explorer dist\MultiViewer-win32-x64
+start explorer ..\releases\MultiViewer-win32-x64
 pause
