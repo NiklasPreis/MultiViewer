@@ -2,7 +2,5 @@ node_modules/
 dist/
 builds/*
 !builds/.gitkeep
-releases/*
-!releases/.gitkeep
 *.pyc
 __pycache__/

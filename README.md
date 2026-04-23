@@ -48,7 +48,7 @@ app\build.bat
 
 Output: `builds\MultiViewer-win32-x64\MultiViewer.exe`
 
-Zip the `MultiViewer-win32-x64` folder and place it in `releases\` for distribution — the EXE needs the surrounding files.
+The EXE needs the surrounding files — zip the whole `MultiViewer-win32-x64` folder for distribution.
 
 ---
 
@@ -87,6 +87,5 @@ MultiViewer/
 │   ├── package.json
 │   ├── run.bat          # One-click launch
 │   └── build.bat        # One-click EXE build
-├── builds/              # Build output (git-ignored)
-└── releases/            # Finished ZIPs for distribution
+└── builds/              # Build output (git-ignored)
 ```
