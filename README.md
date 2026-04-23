@@ -87,5 +87,4 @@ MultiViewer/
 │   ├── package.json
 │   ├── run.bat          # One-click launch
 │   └── build.bat        # One-click EXE build
-└── builds/              # Build output (git-ignored)
 ```
