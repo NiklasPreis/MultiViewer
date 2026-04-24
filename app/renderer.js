@@ -40,11 +40,23 @@ mv.on('fullscreen-change', fs => { isFullScreen = fs })
 mv.invoke('get-settings').then(s => {
   favorites = s.favorites || ['', '', '']
   ROWS = s.ROWS; COLS = s.COLS
+  applyTheme(s.theme || 'dark')
   document.getElementById('set-cols').value = s.COLS
   document.getElementById('set-rows').value = s.ROWS
   document.getElementById('fav1').value = favorites[0] || ''
   document.getElementById('fav2').value = favorites[1] || ''
   document.getElementById('fav3').value = favorites[2] || ''
+})
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme
+  document.getElementById('theme-toggle').checked = theme === 'light'
+}
+
+document.getElementById('theme-toggle').addEventListener('change', e => {
+  const theme = e.target.checked ? 'light' : 'dark'
+  applyTheme(theme)
+  mv.send('set-theme', theme)
 })
 
 // ── Geometry helpers ──────────────────────────────────────────────────

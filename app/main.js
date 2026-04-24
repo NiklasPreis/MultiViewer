@@ -9,7 +9,7 @@ const DEFAULT = 'https://www.google.com'
 
 // ── Persistent settings ────────────────────────────────────────────────
 let settingsPath
-let settings = { rows: 3, cols: 3, favorites: ['', '', ''] }
+let settings = { rows: 3, cols: 3, favorites: ['', '', ''], theme: 'dark' }
 
 function loadSettings() {
   try { Object.assign(settings, JSON.parse(fs.readFileSync(settingsPath, 'utf8'))) } catch {}
@@ -216,6 +216,11 @@ ipcMain.on('remove-cell', (_, id)            => removeCell(id))
 ipcMain.on('navigate',    (_, id, url)       => views[id]?.webContents.loadURL(url))
 ipcMain.on('leave-fullscreen',  ()           => win.setFullScreen(false))
 ipcMain.on('open-external',    (_, url)      => shell.openExternal(url))
+ipcMain.on('set-theme', (_, theme) => {
+  settings.theme = theme
+  saveSettings()
+  win.setBackgroundColor(theme === 'light' ? '#e4e4e4' : '#111111')
+})
 ipcMain.on('modal-open',  () => { modalMode = true;  for (const v of Object.values(views)) v.setBounds({ x: 0, y: 0, width: 0, height: 0 }) })
 ipcMain.on('modal-close', () => { modalMode = false; updateLayout() })
 ipcMain.on('set-grid',    (_, rows, cols)    => applyGrid(rows, cols))
