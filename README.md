@@ -16,7 +16,17 @@ Split your screen into a fully customizable grid of independent browser panels â
 
 ## Screenshots
 
-> *Screenshots coming soon*
+<div align="center">
+
+| Preview | Edit Mode |
+|:---:|:---:|
+| ![Preview](screenshots/preview-mode.png) | ![Edit Mode](screenshots/edit-mode.png) |
+
+| Empty Grid | Settings |
+|:---:|:---:|
+| ![Empty](screenshots/preview-mode-empty.png) | ![Settings](screenshots/settings.png) |
+
+</div>
 
 ---
 
