@@ -1,5 +1,5 @@
 'use strict'
-const { app, BrowserWindow, BrowserView, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, BrowserView, ipcMain, shell, nativeTheme } = require('electron')
 const path = require('path')
 const fs   = require('fs')
 
@@ -188,6 +188,7 @@ app.whenReady().then(() => {
   loadSettings()
   ROWS = settings.rows
   COLS = settings.cols
+  nativeTheme.themeSource = settings.theme || 'dark'
 
   win = new BrowserWindow({
     show: false,
@@ -219,6 +220,7 @@ ipcMain.on('open-external',    (_, url)      => shell.openExternal(url))
 ipcMain.on('set-theme', (_, theme) => {
   settings.theme = theme
   saveSettings()
+  nativeTheme.themeSource = theme
   win.setBackgroundColor(theme === 'light' ? '#e4e4e4' : '#111111')
 })
 ipcMain.on('modal-open',  () => { modalMode = true;  for (const v of Object.values(views)) v.setBounds({ x: 0, y: 0, width: 0, height: 0 }) })
