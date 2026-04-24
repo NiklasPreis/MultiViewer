@@ -25,6 +25,7 @@ let ROWS = 3, COLS = 3
 let win
 let nextId   = 0
 let dragMode = false
+let modalMode = false
 let editMode = false
 let audioId  = -1    // -1 = all unmuted
 const cells  = []
@@ -64,15 +65,15 @@ function viewBounds(cell) {
   const cw = cell.col + cell.colSpan >= COLS ? w - x : cell.colSpan * sw
   const ch = cell.row + cell.rowSpan >= ROWS ? h - y : cell.rowSpan * sh
   return {
-    x,
-    y:      y + handle,
-    width:  Math.max(1, cw - edge),
-    height: Math.max(1, ch - handle - edge),
+    x:      x + edge,
+    y:      y + handle + edge,
+    width:  Math.max(1, cw - 2 * edge),
+    height: Math.max(1, ch - handle - 2 * edge),
   }
 }
 
 function updateLayout() {
-  if (!win || win.isDestroyed() || dragMode) return
+  if (!win || win.isDestroyed() || dragMode || modalMode) return
   for (const c of cells) {
     const v = views[c.id]
     if (v) v.setBounds(viewBounds(c))
@@ -212,6 +213,8 @@ ipcMain.on('add-cell',    (_, row, col, url) => addCell(row, col, url))
 ipcMain.on('remove-cell', (_, id)            => removeCell(id))
 ipcMain.on('navigate',    (_, id, url)       => views[id]?.webContents.loadURL(url))
 ipcMain.on('leave-fullscreen', ()            => win.setFullScreen(false))
+ipcMain.on('modal-open',  () => { modalMode = true;  for (const v of Object.values(views)) v.setBounds({ x: 0, y: 0, width: 0, height: 0 }) })
+ipcMain.on('modal-close', () => { modalMode = false; updateLayout() })
 ipcMain.on('set-grid',    (_, rows, cols)    => applyGrid(rows, cols))
 ipcMain.on('save-favorites', (_, favs)       => { settings.favorites = favs; saveSettings() })
 

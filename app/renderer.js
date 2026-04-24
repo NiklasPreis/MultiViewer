@@ -178,6 +178,7 @@ function render() {
 // ── URL Prompt ────────────────────────────────────────────────────────
 function openUrlPrompt(row, col) {
   modalOpen = true
+  mv.send('modal-open')
   const modal  = document.getElementById('url-modal')
   const input  = document.getElementById('url-input')
   const favDiv = document.getElementById('fav-buttons')
@@ -204,6 +205,7 @@ function openUrlPrompt(row, col) {
   function cleanup() {
     modal.style.display = 'none'
     modalOpen = false
+    mv.send('modal-close')
     input.removeEventListener('keydown', onKey)
     document.getElementById('url-confirm').onclick = null
     document.getElementById('url-cancel').onclick  = null
@@ -221,6 +223,8 @@ function openUrlPrompt(row, col) {
 
 // ── Settings Modal ────────────────────────────────────────────────────
 function openSettings() {
+  modalOpen = true
+  mv.send('modal-open')
   mv.invoke('get-settings').then(s => {
     document.getElementById('set-cols').value = s.COLS
     document.getElementById('set-rows').value = s.ROWS
@@ -228,13 +232,13 @@ function openSettings() {
     document.getElementById('fav2').value = (s.favorites || [])[1] || ''
     document.getElementById('fav3').value = (s.favorites || [])[2] || ''
     document.getElementById('settings-modal').style.display = 'flex'
-    modalOpen = true
   })
 }
 
 function closeSettings() {
   document.getElementById('settings-modal').style.display = 'none'
   modalOpen = false
+  mv.send('modal-close')
 }
 
 document.getElementById('settings-save').addEventListener('click', () => {
@@ -378,7 +382,7 @@ document.addEventListener('keydown', async e => {
     if (document.getElementById('settings-modal').style.display !== 'none') { closeSettings(); return }
     if (document.getElementById('url-modal').style.display !== 'none') {
       document.getElementById('url-modal').style.display = 'none'
-      modalOpen = false; return
+      modalOpen = false; mv.send('modal-close'); return
     }
     if (drag) {
       ghost.style.display = drop.style.display = 'none'
