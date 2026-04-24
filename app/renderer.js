@@ -257,6 +257,11 @@ document.getElementById('settings-save').addEventListener('click', () => {
 
 document.getElementById('settings-close').addEventListener('click', closeSettings)
 
+document.getElementById('github-link').addEventListener('click', e => {
+  e.preventDefault()
+  mv.send('open-external', 'https://github.com/NiklasPreis')
+})
+
 // ── Drag ─────────────────────────────────────────────────────────────
 async function startDrag(e, cell) {
   e.preventDefault()

@@ -1,5 +1,5 @@
 'use strict'
-const { app, BrowserWindow, BrowserView, ipcMain } = require('electron')
+const { app, BrowserWindow, BrowserView, ipcMain, shell } = require('electron')
 const path = require('path')
 const fs   = require('fs')
 
@@ -214,7 +214,8 @@ app.on('window-all-closed', () => app.quit())
 ipcMain.on('add-cell',    (_, row, col, url) => addCell(row, col, url))
 ipcMain.on('remove-cell', (_, id)            => removeCell(id))
 ipcMain.on('navigate',    (_, id, url)       => views[id]?.webContents.loadURL(url))
-ipcMain.on('leave-fullscreen', ()            => win.setFullScreen(false))
+ipcMain.on('leave-fullscreen',  ()           => win.setFullScreen(false))
+ipcMain.on('open-external',    (_, url)      => shell.openExternal(url))
 ipcMain.on('modal-open',  () => { modalMode = true;  for (const v of Object.values(views)) v.setBounds({ x: 0, y: 0, width: 0, height: 0 }) })
 ipcMain.on('modal-close', () => { modalMode = false; updateLayout() })
 ipcMain.on('set-grid',    (_, rows, cols)    => applyGrid(rows, cols))
