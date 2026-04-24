@@ -7,8 +7,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg?logo=windows)](#)
 [![Electron](https://img.shields.io/badge/Built%20with-Electron-47848F.svg?logo=electron)](https://www.electronjs.org/)
+[![Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-8A2BE2?logo=anthropic)](https://claude.ai/code)
 
 Split your screen into a fully customizable grid of independent browser panels — each with its own Chromium session, URL bar, and isolated cookies.
+
+> **This project was entirely built with [Claude Code](https://claude.ai/code)** — Anthropic's AI coding assistant — without writing a single line of code manually.
 
 </div>
 
