@@ -192,7 +192,7 @@ app.whenReady().then(() => {
   win = new BrowserWindow({
     show: false,
     title: 'MultiViewer - by NiklasPreis',
-    icon: path.join(__dirname, 'icon.png'),
+    icon: path.join(__dirname, 'icon.ico'),
     backgroundColor: '#111111',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
