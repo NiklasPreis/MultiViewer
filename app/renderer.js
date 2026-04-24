@@ -40,23 +40,11 @@ mv.on('fullscreen-change', fs => { isFullScreen = fs })
 mv.invoke('get-settings').then(s => {
   favorites = s.favorites || ['', '', '']
   ROWS = s.ROWS; COLS = s.COLS
-  applyTheme(s.theme || 'dark')
   document.getElementById('set-cols').value = s.COLS
   document.getElementById('set-rows').value = s.ROWS
   document.getElementById('fav1').value = favorites[0] || ''
   document.getElementById('fav2').value = favorites[1] || ''
   document.getElementById('fav3').value = favorites[2] || ''
-})
-
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme
-  document.getElementById('theme-toggle').checked = theme === 'light'
-}
-
-document.getElementById('theme-toggle').addEventListener('change', e => {
-  const theme = e.target.checked ? 'light' : 'dark'
-  applyTheme(theme)
-  mv.send('set-theme', theme)
 })
 
 // ── Geometry helpers ──────────────────────────────────────────────────
@@ -117,7 +105,7 @@ function render() {
       const icon = document.createElement('span')
       icon.className = 'drag-icon'
       icon.textContent = '⠿'
-      icon.title = 'Verschieben'
+      icon.title = 'Move'
       icon.addEventListener('mousedown', e => startDrag(e, cell))
 
       const urlInp = document.createElement('input')
@@ -125,7 +113,7 @@ function render() {
       urlInp.dataset.id = cell.id
       urlInp.type = 'text'
       urlInp.value = cellUrls[cell.id] || cell.url || ''
-      urlInp.placeholder = 'URL oder Suche...'
+      urlInp.placeholder = 'URL or search...'
       urlInp.addEventListener('keydown', e => {
         e.stopPropagation()
         if (e.key === 'Enter') { mv.send('navigate', cell.id, resolveUrl(urlInp.value)); urlInp.blur() }
@@ -137,7 +125,7 @@ function render() {
       const audioBtn = document.createElement('button')
       audioBtn.className = 'audio-btn' + (isAudio ? ' active' : '')
       audioBtn.textContent = isAudio ? '🔊' : '🔇'
-      audioBtn.title = isAudio ? 'Audio aktiv – klicken zum Deaktivieren' : 'Nur dieses Fenster hören'
+      audioBtn.title = isAudio ? 'Audio active – click to deactivate' : 'Solo audio source'
       audioBtn.addEventListener('click', e => {
         e.stopPropagation()
         mv.send('set-audio', isAudio ? -1 : cell.id)
@@ -146,7 +134,7 @@ function render() {
       const closeBtn = document.createElement('button')
       closeBtn.className = 'close-btn'
       closeBtn.textContent = '×'
-      closeBtn.title = 'Fenster schließen'
+      closeBtn.title = 'Close panel'
       closeBtn.addEventListener('click', e => { e.stopPropagation(); mv.send('remove-cell', cell.id) })
 
       hdr.append(icon, urlInp, audioBtn, closeBtn)
@@ -180,7 +168,7 @@ function render() {
     const btn = document.createElement('button')
     btn.className = 'add-btn'
     btn.textContent = '+'
-    btn.title = 'Neues Fenster öffnen'
+    btn.title = 'Open new panel'
     btn.addEventListener('click', () => openUrlPrompt(s.row, s.col))
     div.appendChild(btn)
     ov.appendChild(div)
@@ -254,8 +242,8 @@ function closeSettings() {
 }
 
 document.getElementById('settings-save').addEventListener('click', () => {
-  const rows = Math.max(1, Math.min(4, parseInt(document.getElementById('set-rows').value) || ROWS))
-  const cols = Math.max(1, Math.min(6, parseInt(document.getElementById('set-cols').value) || COLS))
+  const rows = Math.max(1, parseInt(document.getElementById('set-rows').value) || ROWS)
+  const cols = Math.max(1, parseInt(document.getElementById('set-cols').value) || COLS)
   const newFavs = [
     document.getElementById('fav1').value.trim(),
     document.getElementById('fav2').value.trim(),
@@ -268,6 +256,14 @@ document.getElementById('settings-save').addEventListener('click', () => {
 })
 
 document.getElementById('settings-close').addEventListener('click', closeSettings)
+
+document.getElementById('settings-reset').addEventListener('click', async () => {
+  if (!window.confirm('Reset to defaults?\n\nAll open panels will be closed and the grid will be reset to 3×3. This cannot be undone.')) return
+  await mv.invoke('reset-defaults')
+  document.getElementById('set-cols').value = 3
+  document.getElementById('set-rows').value = 3
+  closeSettings()
+})
 
 document.getElementById('github-link').addEventListener('click', e => {
   e.preventDefault()

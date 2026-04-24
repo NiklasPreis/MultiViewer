@@ -9,7 +9,7 @@ const DEFAULT = 'https://www.google.com'
 
 // ── Persistent settings ────────────────────────────────────────────────
 let settingsPath
-let settings = { rows: 3, cols: 3, favorites: ['', '', ''], theme: 'dark' }
+let settings = { rows: 3, cols: 3, favorites: ['', '', ''] }
 
 function loadSettings() {
   try { Object.assign(settings, JSON.parse(fs.readFileSync(settingsPath, 'utf8'))) } catch {}
@@ -169,8 +169,8 @@ function exitDragMode() {
 
 // ── Grid resize ────────────────────────────────────────────────────────
 function applyGrid(rows, cols) {
-  ROWS = Math.max(1, Math.min(4, rows))
-  COLS = Math.max(1, Math.min(6, cols))
+  ROWS = Math.max(1, rows)
+  COLS = Math.max(1, cols)
   settings.rows = ROWS; settings.cols = COLS
   saveSettings()
   const toRemove = cells.filter(c => c.row >= ROWS || c.col >= COLS)
@@ -188,7 +188,7 @@ app.whenReady().then(() => {
   loadSettings()
   ROWS = settings.rows
   COLS = settings.cols
-  nativeTheme.themeSource = settings.theme || 'dark'
+  nativeTheme.themeSource = 'dark'
 
   win = new BrowserWindow({
     show: false,
@@ -217,12 +217,6 @@ ipcMain.on('remove-cell', (_, id)            => removeCell(id))
 ipcMain.on('navigate',    (_, id, url)       => views[id]?.webContents.loadURL(url))
 ipcMain.on('leave-fullscreen',  ()           => win.setFullScreen(false))
 ipcMain.on('open-external',    (_, url)      => shell.openExternal(url))
-ipcMain.on('set-theme', (_, theme) => {
-  settings.theme = theme
-  saveSettings()
-  nativeTheme.themeSource = theme
-  win.setBackgroundColor(theme === 'light' ? '#e4e4e4' : '#111111')
-})
 ipcMain.on('modal-open',  () => { modalMode = true;  for (const v of Object.values(views)) v.setBounds({ x: 0, y: 0, width: 0, height: 0 }) })
 ipcMain.on('modal-close', () => { modalMode = false; updateLayout() })
 ipcMain.on('set-grid',    (_, rows, cols)    => applyGrid(rows, cols))
@@ -233,6 +227,11 @@ ipcMain.on('set-audio', (_, id) => {
   for (const [vid, v] of Object.entries(views))
     v.webContents.setAudioMuted(id !== -1 && Number(vid) !== id)
   pushLayout()
+})
+
+ipcMain.handle('reset-defaults', () => {
+  while (cells.length) removeCell(cells[0].id)
+  applyGrid(3, 3)
 })
 
 ipcMain.handle('toggle-fullscreen', () => { win.setFullScreen(!win.isFullScreen()); return win.isFullScreen() })

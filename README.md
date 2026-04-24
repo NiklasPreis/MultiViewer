@@ -32,7 +32,7 @@ Split your screen into a fully customizable grid of independent browser panels �
 
 ## Features
 
-- **Flexible grid** — configure 1–6 columns and 1–4 rows in the settings
+- **Flexible grid** — configure any number of columns and rows in the settings
 - **Independent sessions** — each panel has its own cookies, localStorage, and login state
 - **Edit mode** — toggle handles on/off for a clean, borderless look (default: off)
 - **Drag & drop** — rearrange panels freely within the grid
@@ -86,6 +86,7 @@ npm start
 | Close a panel | Press `D`, click **×** |
 | Change grid size | Press `S`, adjust columns/rows, click Save |
 | Save favourites | Press `S`, enter up to 3 URLs, click Save |
+| Reset to defaults | Press `S`, click **Reset to defaults**, confirm |
 
 ---
 
