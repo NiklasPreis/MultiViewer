@@ -1,6 +1,6 @@
 <div align="center">
 
-# MultiViewer
+# <img src="icon.png" width="40" align="center" /> MultiViewer
 
 **A dark-themed multi-panel browser grid for Windows**
 
