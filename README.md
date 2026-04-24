@@ -1,38 +1,49 @@
+<div align="center">
+
 # MultiViewer
 
-A dark-themed desktop app that splits your screen into a customizable **grid of independent browser panels** — each with its own Chromium session, URL bar, and isolated cookies.
+**A dark-themed multi-panel browser grid for Windows**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg?logo=windows)](#)
+[![Electron](https://img.shields.io/badge/Built%20with-Electron-47848F.svg?logo=electron)](https://www.electronjs.org/)
+
+Split your screen into a fully customizable grid of independent browser panels — each with its own Chromium session, URL bar, and isolated cookies.
+
+</div>
+
+---
+
+## Screenshots
+
+> *Screenshots coming soon*
 
 ---
 
 ## Features
 
-- **Flexible grid** — configure between 1–6 columns and 1–4 rows via the settings menu
+- **Flexible grid** — configure 1–6 columns and 1–4 rows in the settings
 - **Independent sessions** — each panel has its own cookies, localStorage, and login state
-- **Drag & drop** panels to rearrange them freely
-- **Resize from all sides** — drag any edge or corner to span multiple grid cells
-- **Edit mode** — toggle handles, URL bars, and controls on/off for a clean borderless look
-- **Audio selection** — choose one panel as the sole audio source; all others are muted
-- **URL prompt** — enter a URL or search term when opening each panel; pick from saved favourites
-- **Favourite URLs** — save up to 3 URLs for quick access when opening a new panel
-- **Fullscreen** — hide the taskbar and window frame with one key
-- **Autoplay support** — videos play without requiring a click (e.g. YouTube previews)
+- **Edit mode** — toggle handles on/off for a clean, borderless look (default: off)
+- **Drag & drop** — rearrange panels freely within the grid
+- **Resize from all sides** — drag any edge or corner handle to span multiple cells
+- **Audio selection** — pick one panel as the sole audio source; all others are muted
+- **URL prompt** — enter a URL or search term when opening each panel
+- **Favourites** — save up to 3 URLs for quick access when opening a new panel
+- **Fullscreen** — hide the taskbar and window frame instantly
+- **Persistent settings** — grid size and favourites are saved between sessions
+- **Autoplay support** — videos play without requiring a click (e.g. YouTube)
 - **Chrome User-Agent** — avoids being blocked by sites that reject embedded browsers
-- Fully dark UI, settings are persisted between sessions
 
 ---
 
 ## Quick Start
 
-**Requirements:** [Node.js](https://nodejs.org/) (LTS)
+**Requirements:** [Node.js LTS](https://nodejs.org/)
 
-```
-app\run.bat
-```
+Double-click **`app\run.bat`** — it installs Node.js automatically via winget if needed, then launches the app.
 
-`run.bat` installs Node.js automatically via winget if not found, then installs packages and launches the app.
-
-### Manual start
-
+**Manual:**
 ```bash
 cd app
 npm install
@@ -41,24 +52,12 @@ npm start
 
 ---
 
-## Build a standalone EXE
-
-```
-app\build.bat
-```
-
-Output: `builds\MultiViewer-win32-x64\MultiViewer.exe`
-
-Zip the whole `MultiViewer-win32-x64` folder for distribution — the EXE needs the surrounding files.
-
----
-
 ## Keyboard Shortcuts
 
 | Key | Action |
-|---|---|
+|:---:|---|
 | `F` | Fullscreen on / off |
-| `S` | Open settings |
+| `S` | Open / close settings |
 | `D` | Edit mode on / off |
 | `ESC` | Close modal · Cancel drag/resize · Exit fullscreen |
 
@@ -69,23 +68,34 @@ Zip the whole `MultiViewer-win32-x64` folder for distribution — the EXE needs 
 | Action | How |
 |---|---|
 | Add a panel | Click **+** in any empty slot, enter a URL or search term |
-| Open a favourite | Click **+**, then click one of the favourite buttons |
-| Navigate | Enable edit mode (D), click the URL bar in the panel header, press Enter |
-| Move a panel | Enable edit mode (D), drag the **⠿** handle to another slot |
-| Resize a panel | Enable edit mode (D), drag any edge or corner handle |
-| Select audio source | Enable edit mode (D), click **🔇** in a panel header to make it the sole audio source |
-| Close a panel | Enable edit mode (D), click **×** |
-| Change grid size | Press **S**, adjust columns and rows, click Save |
-| Save favourites | Press **S**, enter up to 3 URLs under Favourites, click Save |
+| Open a favourite | Click **+**, then click one of the saved favourite buttons |
+| Navigate | Press `D` to enter edit mode, click the URL bar, press Enter |
+| Move a panel | Press `D`, drag the **⠿** handle to another slot |
+| Resize a panel | Press `D`, drag any edge or corner handle |
+| Select audio source | Press `D`, click **🔇** on a panel to make it the only audible source |
+| Close a panel | Press `D`, click **×** |
+| Change grid size | Press `S`, adjust columns/rows, click Save |
+| Save favourites | Press `S`, enter up to 3 URLs, click Save |
+
+---
+
+## Build a standalone EXE
+
+Double-click **`app\build.bat`** — output lands in `builds\MultiViewer-win32-x64\`.
+
+Zip the entire `MultiViewer-win32-x64` folder for distribution.
+
+> Finished releases are published on the [Releases](https://github.com/NiklasPreis/MultiViewer/releases) page.
 
 ---
 
 ## Tech Stack
 
-- [Electron](https://www.electronjs.org/) — desktop shell
-- [electron-packager](https://github.com/electron/packager) — builds the EXE
-- `BrowserView` per panel for true process isolation
-- Settings persisted to JSON in the OS user-data folder
+| | |
+|---|---|
+| [Electron](https://www.electronjs.org/) | Desktop shell |
+| [electron-packager](https://github.com/electron/packager) | EXE builder |
+| `BrowserView` | One isolated Chromium process per panel |
 
 ---
 
@@ -94,12 +104,21 @@ Zip the whole `MultiViewer-win32-x64` folder for distribution — the EXE needs 
 ```
 MultiViewer/
 ├── README.md
+├── LICENSE
 ├── app/
-│   ├── main.js       # Electron main process — window, BrowserViews, IPC, settings
-│   ├── renderer.js   # Overlay UI — edit mode, drag, resize, modals, shortcuts
-│   ├── preload.js    # IPC bridge exposed to renderer
+│   ├── main.js       # Main process — BrowserViews, IPC, settings
+│   ├── renderer.js   # Overlay UI — edit mode, drag, resize, modals
+│   ├── preload.js    # IPC bridge
 │   ├── index.html    # Overlay shell, styles, modal HTML
+│   ├── icon.ico      # App icon
 │   ├── package.json
 │   ├── run.bat       # One-click launch
 │   └── build.bat     # One-click EXE build
+└── builds/           # Local build output (not tracked by git)
 ```
+
+---
+
+## License
+
+MIT © [NiklasPreis](https://github.com/NiklasPreis)
