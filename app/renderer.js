@@ -1,27 +1,57 @@
 'use strict'
 
-const ROWS = 3, COLS = 3
-
 // ── State ─────────────────────────────────────────────────────────────
-let layout    = null   // last layout sent from main
-let drag      = null   // { id, rowSpan, colSpan, targetRow, targetCol, valid }
-let rsz       = null   // { id, row, col, type, newRs, newCs, valid }
+let ROWS = 3, COLS = 3
+let layout      = null
+let drag        = null
+let rsz         = null
+let editMode    = false
+let audioId     = -1
+let isFullScreen = false
+let modalOpen   = false
+let favorites   = ['', '', '']
+const cellUrls  = {}   // id → current url
 
-// ── DOM refs ─────────────────────────────────────────────────────────
-const ov     = document.getElementById('ov')
-const ghost  = document.getElementById('ghost')
-const drop   = document.getElementById('drop')
-const rszEl  = document.getElementById('rsz')
+// ── DOM refs ──────────────────────────────────────────────────────────
+const ov    = document.getElementById('ov')
+const ghost = document.getElementById('ghost')
+const drop  = document.getElementById('drop')
+const rszEl = document.getElementById('rsz')
 
 // ── IPC ───────────────────────────────────────────────────────────────
-mv.on('layout', data => { layout = data; render() })
+mv.on('layout', data => {
+  layout   = data
+  ROWS     = data.ROWS
+  COLS     = data.COLS
+  editMode = data.editMode
+  audioId  = data.audioId
+  for (const c of data.cells) if (c.url) cellUrls[c.id] = c.url
+  render()
+})
+
+mv.on('cell-url', (id, url) => {
+  cellUrls[id] = url
+  const inp = document.querySelector(`.url-input[data-id="${id}"]`)
+  if (inp && document.activeElement !== inp) inp.value = url
+})
+
+mv.on('fullscreen-change', fs => { isFullScreen = fs })
+
+mv.invoke('get-settings').then(s => {
+  favorites = s.favorites || ['', '', '']
+  ROWS = s.ROWS; COLS = s.COLS
+  document.getElementById('set-cols').value = s.COLS
+  document.getElementById('set-rows').value = s.ROWS
+  document.getElementById('fav1').value = favorites[0] || ''
+  document.getElementById('fav2').value = favorites[1] || ''
+  document.getElementById('fav3').value = favorites[2] || ''
+})
 
 // ── Geometry helpers ──────────────────────────────────────────────────
 function cellPx(row, col, rs, cs) {
   if (!layout) return null
   const { sw, sh, w, h } = layout
-  const x = col * sw
-  const y = row * sh
+  const x = col * sw, y = row * sh
   return {
     x, y,
     w: col + cs >= COLS ? w - x : cs * sw,
@@ -31,19 +61,27 @@ function cellPx(row, col, rs, cs) {
 
 function slotAt(px, py) {
   if (!layout) return null
-  const col = Math.min(COLS - 1, Math.max(0, Math.floor(px / layout.sw)))
-  const row = Math.min(ROWS - 1, Math.max(0, Math.floor(py / layout.sh)))
-  return { row, col }
+  return {
+    col: Math.min(COLS - 1, Math.max(0, Math.floor(px / layout.sw))),
+    row: Math.min(ROWS - 1, Math.max(0, Math.floor(py / layout.sh))),
+  }
 }
 
 function areaFree(row, col, rs, cs, skip = -1) {
-  if (!layout) return false
-  if (row < 0 || col < 0 || row + rs > ROWS || col + cs > COLS) return false
-  const occ = layout.occupied
+  if (!layout || row < 0 || col < 0 || row + rs > ROWS || col + cs > COLS) return false
   for (let r = row; r < row + rs; r++)
     for (let c = col; c < col + cs; c++)
-      if (occ[r][c] !== -1 && occ[r][c] !== skip) return false
+      if (layout.occupied[r][c] !== -1 && layout.occupied[r][c] !== skip) return false
   return true
+}
+
+// ── URL helper ────────────────────────────────────────────────────────
+function resolveUrl(text) {
+  text = (text || '').trim()
+  if (!text) return 'https://www.google.com'
+  if (/^(https?|file|about):/.test(text)) return text
+  if (/\./.test(text) && !/ /.test(text)) return 'https://' + text
+  return 'https://www.google.com/search?q=' + encodeURIComponent(text)
 }
 
 // ── Render ────────────────────────────────────────────────────────────
@@ -59,40 +97,68 @@ function render() {
     wrap.className = 'co'
     wrap.style.cssText = `left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`
 
-    // Header
-    const hdr = document.createElement('div')
-    hdr.className = 'co-header'
+    if (editMode) {
+      // ── Header ──────────────────────────────────────────────────────
+      const hdr = document.createElement('div')
+      hdr.className = 'co-header'
 
-    const icon = document.createElement('span')
-    icon.className = 'drag-icon'
-    icon.textContent = '⠿'
-    icon.title = 'Ziehen zum Verschieben'
-    icon.addEventListener('mousedown', e => startDrag(e, cell))
+      const icon = document.createElement('span')
+      icon.className = 'drag-icon'
+      icon.textContent = '⠿'
+      icon.title = 'Verschieben'
+      icon.addEventListener('mousedown', e => startDrag(e, cell))
 
-    const title = document.createElement('span')
-    title.className = 'cell-title'
+      const urlInp = document.createElement('input')
+      urlInp.className = 'url-input'
+      urlInp.dataset.id = cell.id
+      urlInp.type = 'text'
+      urlInp.value = cellUrls[cell.id] || cell.url || ''
+      urlInp.placeholder = 'URL oder Suche...'
+      urlInp.addEventListener('keydown', e => {
+        e.stopPropagation()
+        if (e.key === 'Enter') { mv.send('navigate', cell.id, resolveUrl(urlInp.value)); urlInp.blur() }
+        if (e.key === 'Escape') { urlInp.value = cellUrls[cell.id] || ''; urlInp.blur() }
+      })
+      urlInp.addEventListener('click', e => e.stopPropagation())
 
-    const x = document.createElement('button')
-    x.className = 'close-btn'
-    x.textContent = '×'
-    x.title = 'Kasten schließen'
-    x.addEventListener('click', e => { e.stopPropagation(); mv.send('remove-cell', cell.id) })
+      const isAudio = audioId === cell.id
+      const audioBtn = document.createElement('button')
+      audioBtn.className = 'audio-btn' + (isAudio ? ' active' : '')
+      audioBtn.textContent = isAudio ? '🔊' : '🔇'
+      audioBtn.title = isAudio ? 'Audio aktiv – klicken zum Deaktivieren' : 'Nur dieses Fenster hören'
+      audioBtn.addEventListener('click', e => {
+        e.stopPropagation()
+        mv.send('set-audio', isAudio ? -1 : cell.id)
+      })
 
-    hdr.append(icon, title, x)
+      const closeBtn = document.createElement('button')
+      closeBtn.className = 'close-btn'
+      closeBtn.textContent = '×'
+      closeBtn.title = 'Fenster schließen'
+      closeBtn.addEventListener('click', e => { e.stopPropagation(); mv.send('remove-cell', cell.id) })
 
-    // Resize handles (right, bottom, corner)
-    const rr = document.createElement('div'); rr.className = 'rr'
-    const rb = document.createElement('div'); rb.className = 'rb'
-    const rc = document.createElement('div'); rc.className = 'rc'
-    rr.addEventListener('mousedown', e => startResize(e, cell, 'col'))
-    rb.addEventListener('mousedown', e => startResize(e, cell, 'row'))
-    rc.addEventListener('mousedown', e => startResize(e, cell, 'both'))
+      hdr.append(icon, urlInp, audioBtn, closeBtn)
+      wrap.appendChild(hdr)
 
-    wrap.append(hdr, rr, rb, rc)
+      // ── Resize handles (all 8 directions) ───────────────────────────
+      const handleDefs = [
+        ['rl', 'left'], ['rr', 'right'],
+        ['rt', 'top'],  ['rb', 'bottom'],
+        ['rtl', 'top-left'], ['rtr', 'top-right'],
+        ['rbl', 'bottom-left'], ['rc', 'bottom-right'],
+      ]
+      for (const [cls, type] of handleDefs) {
+        const el = document.createElement('div')
+        el.className = cls
+        el.addEventListener('mousedown', e => startResize(e, cell, type))
+        wrap.appendChild(el)
+      }
+    }
+
     ov.appendChild(wrap)
   }
 
-  // Empty slots
+  // ── Empty slots ──────────────────────────────────────────────────────
   for (const s of layout.empty) {
     const b = cellPx(s.row, s.col, 1, 1)
     if (!b) continue
@@ -102,12 +168,90 @@ function render() {
     const btn = document.createElement('button')
     btn.className = 'add-btn'
     btn.textContent = '+'
-    btn.title = 'Neuen Kasten hinzufügen'
-    btn.addEventListener('click', () => mv.send('add-cell', s.row, s.col))
+    btn.title = 'Neues Fenster öffnen'
+    btn.addEventListener('click', () => openUrlPrompt(s.row, s.col))
     div.appendChild(btn)
     ov.appendChild(div)
   }
 }
+
+// ── URL Prompt ────────────────────────────────────────────────────────
+function openUrlPrompt(row, col) {
+  modalOpen = true
+  const modal  = document.getElementById('url-modal')
+  const input  = document.getElementById('url-input')
+  const favDiv = document.getElementById('fav-buttons')
+
+  favDiv.innerHTML = ''
+  for (const fav of favorites.filter(f => f.trim())) {
+    const btn = document.createElement('button')
+    btn.className = 'fav-btn'
+    btn.textContent = fav
+    btn.title = fav
+    btn.addEventListener('click', () => submit(fav))
+    favDiv.appendChild(btn)
+  }
+
+  input.value = ''
+  modal.style.display = 'flex'
+  requestAnimationFrame(() => input.focus())
+
+  function submit(raw) {
+    cleanup()
+    mv.send('add-cell', row, col, resolveUrl(raw))
+  }
+
+  function cleanup() {
+    modal.style.display = 'none'
+    modalOpen = false
+    input.removeEventListener('keydown', onKey)
+    document.getElementById('url-confirm').onclick = null
+    document.getElementById('url-cancel').onclick  = null
+  }
+
+  function onKey(e) {
+    if (e.key === 'Enter')  { e.preventDefault(); submit(input.value) }
+    if (e.key === 'Escape') { e.preventDefault(); cleanup() }
+  }
+
+  input.addEventListener('keydown', onKey)
+  document.getElementById('url-confirm').onclick = () => submit(input.value)
+  document.getElementById('url-cancel').onclick  = cleanup
+}
+
+// ── Settings Modal ────────────────────────────────────────────────────
+function openSettings() {
+  mv.invoke('get-settings').then(s => {
+    document.getElementById('set-cols').value = s.COLS
+    document.getElementById('set-rows').value = s.ROWS
+    document.getElementById('fav1').value = (s.favorites || [])[0] || ''
+    document.getElementById('fav2').value = (s.favorites || [])[1] || ''
+    document.getElementById('fav3').value = (s.favorites || [])[2] || ''
+    document.getElementById('settings-modal').style.display = 'flex'
+    modalOpen = true
+  })
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').style.display = 'none'
+  modalOpen = false
+}
+
+document.getElementById('settings-save').addEventListener('click', () => {
+  const rows = Math.max(1, Math.min(4, parseInt(document.getElementById('set-rows').value) || ROWS))
+  const cols = Math.max(1, Math.min(6, parseInt(document.getElementById('set-cols').value) || COLS))
+  const newFavs = [
+    document.getElementById('fav1').value.trim(),
+    document.getElementById('fav2').value.trim(),
+    document.getElementById('fav3').value.trim(),
+  ]
+  favorites = newFavs
+  mv.send('set-grid', rows, cols)
+  mv.send('save-favorites', newFavs)
+  closeSettings()
+})
+
+document.getElementById('settings-close').addEventListener('click', closeSettings)
 
 // ── Drag ─────────────────────────────────────────────────────────────
 async function startDrag(e, cell) {
@@ -116,10 +260,9 @@ async function startDrag(e, cell) {
            targetRow: cell.row, targetCol: cell.col, valid: true }
   await mv.invoke('drag-start', cell.id)
   showDrop(cell.row, cell.col, cell.rowSpan, cell.colSpan, true)
-  posGhost(e)
   const b = cellPx(cell.row, cell.col, cell.rowSpan, cell.colSpan)
   if (b) {
-    ghost.style.cssText = `display:block; width:${Math.round(b.w * 0.35)}px; height:${Math.round(b.h * 0.35)}px`
+    ghost.style.cssText = `display:block;width:${Math.round(b.w * .35)}px;height:${Math.round(b.h * .35)}px`
     posGhost(e)
   }
 }
@@ -139,12 +282,22 @@ function showDrop(row, col, rs, cs, valid) {
 // ── Resize ────────────────────────────────────────────────────────────
 async function startResize(e, cell, type) {
   e.preventDefault(); e.stopPropagation()
-  rsz = { id: cell.id, row: cell.row, col: cell.col,
-          origRs: cell.rowSpan, origCs: cell.colSpan,
-          newRs: cell.rowSpan, newCs: cell.colSpan, type, valid: true }
-  document.body.style.cursor =
-    type === 'col' ? 'ew-resize' : type === 'row' ? 'ns-resize' : 'nwse-resize'
-  await mv.invoke('resize-start', cell.id)
+  rsz = {
+    id: cell.id,
+    origRow: cell.row, origCol: cell.col,
+    origRs: cell.rowSpan, origCs: cell.colSpan,
+    newRow: cell.row, newCol: cell.col,
+    newRs: cell.rowSpan, newCs: cell.colSpan,
+    type, valid: true,
+  }
+  const cursors = {
+    'left': 'ew-resize', 'right': 'ew-resize',
+    'top': 'ns-resize',  'bottom': 'ns-resize',
+    'top-left': 'nwse-resize',  'bottom-right': 'nwse-resize',
+    'top-right': 'nesw-resize', 'bottom-left': 'nesw-resize',
+  }
+  document.body.style.cursor = cursors[type] || 'default'
+  await mv.invoke('resize-start')
   showRsz(cell.row, cell.col, cell.rowSpan, cell.colSpan, true)
 }
 
@@ -155,7 +308,7 @@ function showRsz(row, col, rs, cs, valid) {
   rszEl.style.cssText = `display:block;left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px`
 }
 
-// ── Global mouse events ───────────────────────────────────────────────
+// ── Mouse events ──────────────────────────────────────────────────────
 document.addEventListener('mousemove', e => {
   if (drag) {
     posGhost(e)
@@ -172,46 +325,76 @@ document.addEventListener('mousemove', e => {
 
   if (rsz && layout) {
     const { sw, sh } = layout
+    const t = rsz.type
     let nr = rsz.origRs, nc = rsz.origCs
-    if (rsz.type === 'col' || rsz.type === 'both')
-      nc = Math.max(1, Math.min(COLS - rsz.col, Math.round((e.clientX - rsz.col * sw) / sw)))
-    if (rsz.type === 'row' || rsz.type === 'both')
-      nr = Math.max(1, Math.min(ROWS - rsz.row, Math.round((e.clientY - rsz.row * sh) / sh)))
+    let nr2 = rsz.origRow, nc2 = rsz.origCol
+
+    if (t === 'right' || t === 'top-right' || t === 'bottom-right')
+      nc = Math.max(1, Math.min(COLS - rsz.origCol, Math.round((e.clientX - rsz.origCol * sw) / sw)))
+
+    if (t === 'bottom' || t === 'bottom-right' || t === 'bottom-left')
+      nr = Math.max(1, Math.min(ROWS - rsz.origRow, Math.round((e.clientY - rsz.origRow * sh) / sh)))
+
+    if (t === 'left' || t === 'top-left' || t === 'bottom-left') {
+      nc2 = Math.max(0, Math.min(rsz.origCol + rsz.origCs - 1, Math.floor(e.clientX / sw)))
+      nc  = rsz.origCol + rsz.origCs - nc2
+    }
+
+    if (t === 'top' || t === 'top-left' || t === 'top-right') {
+      nr2 = Math.max(0, Math.min(rsz.origRow + rsz.origRs - 1, Math.floor(e.clientY / sh)))
+      nr  = rsz.origRow + rsz.origRs - nr2
+    }
+
     rsz.newRs = nr; rsz.newCs = nc
-    rsz.valid = areaFree(rsz.row, rsz.col, nr, nc, rsz.id)
-    showRsz(rsz.row, rsz.col, nr, nc, rsz.valid)
+    rsz.newRow = nr2; rsz.newCol = nc2
+    rsz.valid = areaFree(nr2, nc2, nr, nc, rsz.id)
+    showRsz(nr2, nc2, nr, nc, rsz.valid)
   }
 })
 
-document.addEventListener('mouseup', async e => {
+document.addEventListener('mouseup', async () => {
   if (drag) {
-    ghost.style.display = 'none'
-    drop.style.display  = 'none'
+    ghost.style.display = drop.style.display = 'none'
     if (drag.valid) await mv.invoke('drag-end', drag.id, drag.targetRow, drag.targetCol)
     else            await mv.invoke('drag-cancel')
     drag = null
     return
   }
   if (rsz) {
-    rszEl.style.display    = 'none'
+    rszEl.style.display = 'none'
     document.body.style.cursor = ''
-    if (rsz.valid) await mv.invoke('resize-end', rsz.id, rsz.newRs, rsz.newCs)
+    if (rsz.valid) await mv.invoke('resize-end', rsz.id, rsz.newRow, rsz.newCol, rsz.newRs, rsz.newCs)
     else           await mv.invoke('resize-cancel')
     rsz = null
   }
 })
 
+// ── Keyboard shortcuts ────────────────────────────────────────────────
 document.addEventListener('keydown', async e => {
-  if (e.key !== 'Escape') return
-  if (drag) {
-    ghost.style.display = drop.style.display = 'none'
-    await mv.invoke('drag-cancel')
-    drag = null
+  const inInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'
+
+  if (e.key === 'Escape') {
+    if (inInput) { e.target.blur(); return }
+    if (document.getElementById('settings-modal').style.display !== 'none') { closeSettings(); return }
+    if (document.getElementById('url-modal').style.display !== 'none') {
+      document.getElementById('url-modal').style.display = 'none'
+      modalOpen = false; return
+    }
+    if (drag) {
+      ghost.style.display = drop.style.display = 'none'
+      await mv.invoke('drag-cancel'); drag = null; return
+    }
+    if (rsz) {
+      rszEl.style.display = 'none'; document.body.style.cursor = ''
+      await mv.invoke('resize-cancel'); rsz = null; return
+    }
+    if (isFullScreen) { mv.send('leave-fullscreen'); return }
+    return
   }
-  if (rsz) {
-    rszEl.style.display = 'none'
-    document.body.style.cursor = ''
-    await mv.invoke('resize-cancel')
-    rsz = null
-  }
+
+  if (inInput || modalOpen) return
+
+  if (e.key === 'f' || e.key === 'F') await mv.invoke('toggle-fullscreen')
+  if (e.key === 's' || e.key === 'S') openSettings()
+  if (e.key === 'd' || e.key === 'D') mv.invoke('toggle-edit')
 })
