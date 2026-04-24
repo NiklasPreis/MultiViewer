@@ -1,22 +1,23 @@
 # MultiViewer
 
-A dark-themed desktop app that splits your screen into a **3 × 3 grid of independent browser panels** — each with its own Chromium session, navigation bar, and isolated cookies.
+A dark-themed desktop app that splits your screen into a customizable **grid of independent browser panels** — each with its own Chromium session, URL bar, and isolated cookies.
 
 ---
 
 ## Features
 
-- **9 browser panels** arranged in a 3 × 3 grid
-- **Drag & drop** panels to rearrange them freely
-- **Resize** panels to span multiple grid cells (right / bottom / corner handles)
+- **Flexible grid** — configure between 1–6 columns and 1–4 rows via the settings menu
 - **Independent sessions** — each panel has its own cookies, localStorage, and login state
-- **Smart URL bar** — enter a URL or just type a search term
-- **Loading progress bar** per panel
-- **Add / close** panels on the fly with + and ×
-- **Autoplay support** — videos start without requiring a click (e.g. YouTube previews)
+- **Drag & drop** panels to rearrange them freely
+- **Resize from all sides** — drag any edge or corner to span multiple grid cells
+- **Edit mode** — toggle handles, URL bars, and controls on/off for a clean borderless look
+- **Audio selection** — choose one panel as the sole audio source; all others are muted
+- **URL prompt** — enter a URL or search term when opening each panel; pick from saved favourites
+- **Favourite URLs** — save up to 3 URLs for quick access when opening a new panel
+- **Fullscreen** — hide the taskbar and window frame with one key
+- **Autoplay support** — videos play without requiring a click (e.g. YouTube previews)
 - **Chrome User-Agent** — avoids being blocked by sites that reject embedded browsers
-- Press **Escape** to cancel any drag or resize in progress
-- Fully dark UI
+- Fully dark UI, settings are persisted between sessions
 
 ---
 
@@ -28,7 +29,7 @@ A dark-themed desktop app that splits your screen into a **3 × 3 grid of indepe
 app\run.bat
 ```
 
-`run.bat` installs Node.js automatically via winget if it is not found, then installs packages and launches the app.
+`run.bat` installs Node.js automatically via winget if not found, then installs packages and launches the app.
 
 ### Manual start
 
@@ -48,7 +49,18 @@ app\build.bat
 
 Output: `builds\MultiViewer-win32-x64\MultiViewer.exe`
 
-The EXE needs the surrounding files — zip the whole `MultiViewer-win32-x64` folder for distribution.
+Zip the whole `MultiViewer-win32-x64` folder for distribution — the EXE needs the surrounding files.
+
+---
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|---|---|
+| `F` | Fullscreen on / off |
+| `S` | Open settings |
+| `D` | Edit mode on / off |
+| `ESC` | Close modal · Cancel drag/resize · Exit fullscreen |
 
 ---
 
@@ -56,13 +68,15 @@ The EXE needs the surrounding files — zip the whole `MultiViewer-win32-x64` fo
 
 | Action | How |
 |---|---|
-| Open a URL | Click the address bar of any panel, type a URL or search term, press Enter |
-| Add a panel | Click the **+** button in any empty slot |
-| Close a panel | Click **×** in the panel header |
-| Move a panel | Drag the **⠿** handle in the panel header to another slot |
-| Resize a panel | Drag the right, bottom, or corner resize strip |
-| Cancel drag/resize | Press **Escape** |
-| Hard reload | Shift + click the reload button ↻ |
+| Add a panel | Click **+** in any empty slot, enter a URL or search term |
+| Open a favourite | Click **+**, then click one of the favourite buttons |
+| Navigate | Enable edit mode (D), click the URL bar in the panel header, press Enter |
+| Move a panel | Enable edit mode (D), drag the **⠿** handle to another slot |
+| Resize a panel | Enable edit mode (D), drag any edge or corner handle |
+| Select audio source | Enable edit mode (D), click **🔇** in a panel header to make it the sole audio source |
+| Close a panel | Enable edit mode (D), click **×** |
+| Change grid size | Press **S**, adjust columns and rows, click Save |
+| Save favourites | Press **S**, enter up to 3 URLs under Favourites, click Save |
 
 ---
 
@@ -71,6 +85,7 @@ The EXE needs the surrounding files — zip the whole `MultiViewer-win32-x64` fo
 - [Electron](https://www.electronjs.org/) — desktop shell
 - [electron-packager](https://github.com/electron/packager) — builds the EXE
 - `BrowserView` per panel for true process isolation
+- Settings persisted to JSON in the OS user-data folder
 
 ---
 
@@ -80,11 +95,11 @@ The EXE needs the surrounding files — zip the whole `MultiViewer-win32-x64` fo
 MultiViewer/
 ├── README.md
 ├── app/
-│   ├── main.js          # Electron main process — window, BrowserViews, IPC
-│   ├── renderer.js      # Overlay UI — drag, resize, empty-slot buttons
-│   ├── preload.js       # IPC bridge exposed to renderer
-│   ├── index.html       # Overlay shell + styles
+│   ├── main.js       # Electron main process — window, BrowserViews, IPC, settings
+│   ├── renderer.js   # Overlay UI — edit mode, drag, resize, modals, shortcuts
+│   ├── preload.js    # IPC bridge exposed to renderer
+│   ├── index.html    # Overlay shell, styles, modal HTML
 │   ├── package.json
-│   ├── run.bat          # One-click launch
-│   └── build.bat        # One-click EXE build
+│   ├── run.bat       # One-click launch
+│   └── build.bat     # One-click EXE build
 ```
